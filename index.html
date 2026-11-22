@@ -980,7 +980,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc, deleteDoc, collection, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     // =========================================================================
     // 1. DEFAULT 10 SOAL PKK KELAS XII (5 PILIHAN A-E)
@@ -1186,11 +1186,55 @@
       measurementId: "G-44VI3P01WC"
     };
 
+    // Bank soal terpusat untuk LATIHAN (kunci terlihat oleh browser; bukan ujian resmi).
+    let quizBankReady = false;
+    const startSubmitButton = document.querySelector('#student-form button[type="submit"]');
+    startSubmitButton.disabled = true;
+    startSubmitButton.textContent = 'Memuat bank soal Firebase...';
+    function showBankProblem(message) {
+      quizBankReady = false;
+      startSubmitButton.disabled = true;
+      startSubmitButton.textContent = 'Bank soal belum tersedia';
+      document.getElementById('form-error').textContent = message;
+      document.getElementById('cloud-status-badge').textContent = 'Status: Bank soal belum tersedia';
+    }
+    function validateBank(data) {
+      if (!data || data.status !== 'published' || !Array.isArray(data.questions)) throw new Error('Belum ada bank soal diterbitkan guru.');
+      if (data.questions.length < 10 || data.questions.length > 200) throw new Error('Jumlah soal harus 10–200.');
+      return data.questions.map((q, i) => {
+        if (!q || typeof q.question !== 'string' || !q.question.trim() || q.question.length > 1500 ||
+            !Array.isArray(q.options) || ![4,5].includes(q.options.length) ||
+            q.options.some(v => typeof v !== 'string' || !v.trim() || v.length > 500) ||
+            !Number.isInteger(q.answerIndex) || q.answerIndex < 0 || q.answerIndex >= q.options.length) {
+          throw new Error(`Soal #${i+1} dalam bank soal tidak valid.`);
+        }
+        return {question:q.question, options:q.options, answerIndex:q.answerIndex};
+      });
+    }
+    async function fetchPublishedBank() {
+      const snap = await getDoc(doc(db, 'quiz_bank', 'active'));
+      if (!snap.exists()) throw new Error('Guru belum memublikasikan soal ke Firebase.');
+      const data = snap.data();
+      const verified = validateBank(data);
+      // Tetapkan soal hanya saat masih di menu awal; jangan mengubah sesi aktif.
+      if (gameState.mode !== 'START') return;
+      QUIZ_DATA = verified;
+      currentMapel = String(data.mapel || DEFAULT_MAPEL).slice(0,120);
+      gameState.answeredFlags = new Array(QUIZ_DATA.length).fill(false);
+      syncBrandingUI();
+      buildLevel();
+      quizBankReady = true;
+      document.getElementById('form-error').textContent = '';
+      startSubmitButton.disabled = false;
+      startSubmitButton.textContent = '▶ MULAI GAME';
+      document.getElementById('cloud-status-badge').textContent = `Status: ${QUIZ_DATA.length} soal Firebase siap`;
+    }
+
     // Initialize Firebase Cloud Sync if environment config exists
     async function initCloudSync() {
       const badge = document.getElementById('cloud-status-badge');
       if (FIREBASE_WEB_CONFIG.apiKey.startsWith('PASTE_')) {
-        badge.textContent = 'Status: Mode Lokal — konfigurasi Firebase belum lengkap';
+        showBankProblem('Konfigurasi Firebase belum lengkap.');
         return;
       }
       try {
@@ -1202,11 +1246,12 @@
         if (!currentUser) throw new Error('Login anonim belum berhasil');
         isCloudConnected = true; // Authenticated, but individual writes can still fail under Rules.
         badge.textContent = 'Status: Firebase siap — pengiriman belum diuji';
+        try { await fetchPublishedBank(); } catch (bankError) { console.error('Bank soal Firebase:', bankError); showBankProblem(bankError.message || 'Gagal memuat bank soal.'); }
         badge.style.borderColor = '#10b981';
         badge.style.color = '#6ee7b7';
       } catch (err) {
         isCloudConnected = false;
-        badge.textContent = 'Status: Mode Lokal — Firebase gagal tersambung';
+        showBankProblem('Koneksi Firebase gagal. Cek internet lalu refresh.');
         console.error('Firebase init failed:', err);
       }
     }
@@ -2638,6 +2683,7 @@
     // Start Game Form Submission
     document.getElementById('student-form').addEventListener('submit', (e) => {
       e.preventDefault();
+      if (!quizBankReady) { document.getElementById('form-error').textContent = 'Bank soal Firebase belum siap. Refresh setelah guru memublikasikan soal.'; return; }
       const nameVal = document.getElementById('student-name').value.trim();
       const classVal = document.getElementById('student-class').value.trim();
       const absenVal = document.getElementById('student-absen').value.trim();
@@ -2701,7 +2747,10 @@
     const teacherAuthError = document.getElementById('teacher-auth-error');
 
     // Open Teacher Password Modal
+    document.getElementById('btn-open-teacher').textContent = '🔒 Kelola Soal: Dashboard Guru';
     document.getElementById('btn-open-teacher').addEventListener('click', () => {
+      window.open('dashboard_ibu_ria/', '_blank', 'noopener');
+      return;
       teacherPassInput.value = '';
       teacherAuthError.textContent = '';
       authTeacherModal.classList.remove('hidden');
