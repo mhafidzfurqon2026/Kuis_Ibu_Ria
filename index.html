@@ -790,7 +790,9 @@
           </div>
         </div>
 
+        <div id="cloud-submit-status" role="status" aria-live="polite" style="text-align:center;color:#fde68a;font-size:13px;font-weight:700;margin:10px 0;">Status pengiriman belum tersedia.</div>
         <div class="action-buttons no-print">
+          <button type="button" id="btn-retry-cloud" class="retro-btn slate hidden">Coba Kirim Lagi</button>
           <button type="button" id="btn-download-csv" class="retro-btn blue">Download CSV</button>
           <button type="button" id="btn-print-pdf" class="retro-btn amber">Cetak / Simpan PDF</button>
           <button type="button" id="btn-play-again" class="retro-btn red">KELUAR</button>
@@ -828,7 +830,7 @@
       <div class="modal-card wide">
         <div class="game-header-banner no-print">
           <h1>PANEL KHUSUS GURU — IBU RIA</h1>
-          <div class="mapel-line">Kelola Mata Pelajaran, Bank Soal (A–E), & Pantau Nilai Siswa Live</div>
+          <div class="mapel-line">Kelola Mata Pelajaran, Bank Soal (A–E), & Pantau Rekap Lokal (Belum Sinkron Cloud)</div>
         </div>
 
         <!-- PENGATURAN MAPEL & KODE AKSES -->
@@ -847,7 +849,7 @@
         <div class="tab-bar no-print">
           <button type="button" id="tab-btn-upload" class="tab-btn active">1. Upload / Paste Soal</button>
           <button type="button" id="tab-btn-manual" class="tab-btn">2. Edit Manual Soal</button>
-          <button type="button" id="tab-btn-live" class="tab-btn">3. Pantau Nilai Siswa (Live)</button>
+          <button type="button" id="tab-btn-live" class="tab-btn">3. Rekap Lokal (Perangkat Ini)</button>
         </div>
 
         <!-- TAB 1: UPLOAD / PASTE SOAL -->
@@ -887,8 +889,8 @@
           <div id="manual-quiz-list" style="max-height:330px; overflow-y:auto; padding-right:4px;"></div>
         </div>
 
-        <!-- TAB 3: PANTAU NILAI SISWA (LIVE DASHBOARD) -->
-        <div id="tab-panel-live" class="hidden">
+        <!-- TAB 3: REKAP LOKAL; BUKAN DASHBOARD LINTAS SISWA -->
+        <div id="tab-panel-live" class="hidden"><p style="color:#fde68a;font-size:12px;margin-bottom:12px;">Rekap hanya dari browser ini, BUKAN data seluruh siswa di Firestore. Gunakan Firebase Console untuk melihat hasil cloud. Akses kode guru di HTML bukan keamanan server.</p>
           <div class="stats-row">
             <div class="stat-card">
               <div class="s-val" id="stat-total-students">0</div>
@@ -957,14 +959,14 @@
           <div class="action-buttons no-print" style="margin-top:10px;">
             <button type="button" id="btn-export-class-csv" class="retro-btn sm blue">Download Rekap Kelas (.CSV)</button>
             <button type="button" id="btn-print-class-pdf" class="retro-btn sm amber">Cetak / Simpan Rekap PDF</button>
-            <button type="button" id="btn-clear-all-scores" class="retro-btn sm red">Reset Semua Nilai</button>
+            <button type="button" id="btn-clear-all-scores" class="retro-btn sm red">Reset Rekap Lokal</button>
           </div>
         </div>
 
         <!-- FOOTER PANEL GURU -->
         <div id="teacher-save-status" class="no-print" style="margin-top:12px; font-size:12px; font-weight:800; color:#38bdf8; text-align:center;"></div>
         <div class="action-buttons no-print" style="margin-top:10px; border-top:1px solid #334155; padding-top:12px;">
-          <button type="button" id="btn-save-cloud-quiz" class="retro-btn">💾 Simpan & Update ke Cloud</button>
+          <button type="button" id="btn-save-cloud-quiz" class="retro-btn">💾 Simpan Soal di Perangkat Ini</button>
           <button type="button" id="btn-reset-default-quiz" class="retro-btn amber">↺ Reset Soal Bawaan</button>
           <button type="button" id="btn-close-teacher" class="retro-btn slate">Tutup Panel</button>
         </div>
@@ -978,7 +980,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc, deleteDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, deleteDoc, collection, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     // =========================================================================
     // 1. DEFAULT 10 SOAL PKK KELAS XII (5 PILIHAN A-E)
@@ -1172,71 +1174,40 @@
         `Total: ${QUIZ_DATA.length} Soal (~${perTv} Soal / TV)`;
     }
 
+    // FIREBASE PROJECT SETTINGS: paste the exact apiKey from Firebase Console > Project settings > Config.
+    // This is a public Firebase WEB API key (not an admin key). Do NOT paste service-account credentials.
+    const FIREBASE_WEB_CONFIG = {
+      apiKey: "AIzaSyDbGvAFWm-knUWiCJ5RvFLbK3uz6yFrnlc",
+      authDomain: "kuis-pembelajaran-ibu-ria.firebaseapp.com",
+      projectId: "kuis-pembelajaran-ibu-ria",
+      storageBucket: "kuis-pembelajaran-ibu-ria.firebasestorage.app",
+      messagingSenderId: "1021948748495",
+      appId: "1:1021948748495:web:f32cd1ac2f77b3c612cdba",
+      measurementId: "G-44VI3P01WC"
+    };
+
     // Initialize Firebase Cloud Sync if environment config exists
     async function initCloudSync() {
       const badge = document.getElementById('cloud-status-badge');
+      if (FIREBASE_WEB_CONFIG.apiKey.startsWith('PASTE_')) {
+        badge.textContent = 'Status: Mode Lokal — konfigurasi Firebase belum lengkap';
+        return;
+      }
       try {
-        if (typeof __firebase_config === 'undefined' || !__firebase_config) {
-          badge.textContent = 'Status: Mode Lokal Aktif';
-          return;
-        }
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const app = initializeApp(firebaseConfig);
+        const app = initializeApp(FIREBASE_WEB_CONFIG);
         auth = getAuth(app);
         db = getFirestore(app);
-
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          const cred = await signInWithCustomToken(auth, __initial_auth_token);
-          currentUser = cred.user;
-        } else {
-          const cred = await signInAnonymously(auth);
-          currentUser = cred.user;
-        }
-
-        if (!currentUser) return;
-        isCloudConnected = true;
-        badge.textContent = 'Status: Tersinkronisasi (Cloud Online)';
+        const cred = await signInAnonymously(auth);
+        currentUser = cred.user;
+        if (!currentUser) throw new Error('Login anonim belum berhasil');
+        isCloudConnected = true; // Authenticated, but individual writes can still fail under Rules.
+        badge.textContent = 'Status: Firebase siap — pengiriman belum diuji';
         badge.style.borderColor = '#10b981';
         badge.style.color = '#6ee7b7';
-
-        // Listen to shared quiz config in public collection
-        const configDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'quiz_settings', 'active_config');
-        onSnapshot(configDocRef, (snap) => {
-          if (snap.exists()) {
-            const data = snap.data();
-            if (data.mapel) currentMapel = data.mapel;
-            if (data.teacherCode) teacherAccessCode = data.teacherCode;
-            if (Array.isArray(data.quizzes) && data.quizzes.length > 0) {
-              QUIZ_DATA = data.quizzes;
-              if (gameState.mode === 'START') {
-                gameState.answeredFlags = new Array(QUIZ_DATA.length).fill(false);
-                buildLevel();
-              }
-            }
-            saveLocalConfig();
-            syncBrandingUI();
-          }
-        }, (err) => {
-          console.debug('Config listener fallback:', err);
-        });
-
-        // Listen to live student scores
-        const scoresColRef = collection(db, 'artifacts', appId, 'public', 'data', 'student_scores');
-        onSnapshot(scoresColRef, (snapshot) => {
-          const list = [];
-          snapshot.forEach((docSnap) => {
-            list.push({ id: docSnap.id, ...docSnap.data() });
-          });
-          sortScoresByRank(list);
-          liveScoresList = list;
-          saveLocalScores();
-          renderLiveDashboard();
-        }, (err) => {
-          console.debug('Scores listener fallback:', err);
-        });
       } catch (err) {
-        badge.textContent = 'Status: Mode Offline / Lokal';
-        console.debug('Cloud init skipped:', err);
+        isCloudConnected = false;
+        badge.textContent = 'Status: Mode Lokal — Firebase gagal tersambung';
+        console.error('Firebase init failed:', err);
       }
     }
 
@@ -1803,22 +1774,51 @@
       return 'D (Perlu Bimbingan)';
     }
 
+    let lastResultRecord = null;
     async function submitScoreToCloud(record) {
-      // Save to local cache first and sort by rank (Nilai desc, Koin desc)
-      liveScoresList.unshift(record);
+      lastResultRecord = record;
+      // Local recap is only a convenience copy for this browser.
+      if (!liveScoresList.includes(record)) liveScoresList.unshift(record);
       sortScoresByRank(liveScoresList);
       saveLocalScores();
       renderLiveDashboard();
 
-      // Push to Firestore if connected
-      if (isCloudConnected && db && currentUser) {
-        try {
-          const docId = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-          const scoreDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'student_scores', docId);
-          await setDoc(scoreDocRef, record);
-        } catch (err) {
-          console.debug('Failed to push score to cloud:', err);
-        }
+      const statusEl = document.getElementById('cloud-submit-status');
+      const retryBtn = document.getElementById('btn-retry-cloud');
+      const publishStatus = (message, retry = true) => {
+        statusEl.textContent = message;
+        retryBtn.classList.toggle('hidden', !retry);
+      };
+      publishStatus('Mengirim hasil ke Firebase...', false);
+      if (!isCloudConnected || !db || !currentUser) {
+        publishStatus('BELUM TERKIRIM: Firebase belum terhubung. Simpan CSV sebagai cadangan.');
+        return;
+      }
+      try {
+        // One CREATE per anonymous Firebase UID. Rules deny read/update/delete.
+        const payload = {
+          uid: currentUser.uid,
+          name: String(record.name).slice(0, 100),
+          className: String(record.className).slice(0, 80),
+          absen: String(record.absen).slice(0, 3),
+          mapel: String(record.mapel).slice(0, 120),
+          totalQ: record.totalQ,
+          correct: record.correct,
+          wrong: record.wrong,
+          score: record.score,
+          coins: record.coins,
+          predikat: String(record.predikat).slice(0, 80),
+          createdAt: serverTimestamp(),
+          verification: 'CLIENT_UNVERIFIED'
+        };
+        await setDoc(doc(db, 'hasil_kuis', currentUser.uid), payload);
+        publishStatus('BERHASIL: Hasil tersimpan di Firestore (nilai belum diverifikasi server).', false);
+      } catch (err) {
+        console.error('Firebase score submission failed:', err);
+        const already = err.code === 'permission-denied';
+        publishStatus(already
+          ? 'BELUM TERKIRIM: Akses ditolak / akun ini sudah pernah mengirim. Periksa Firestore dan Rules.'
+          : 'BELUM TERKIRIM: Gangguan koneksi atau Firebase. Coba lagi.');
       }
     }
 
@@ -1863,6 +1863,10 @@
 
       submitScoreToCloud(record);
     }
+
+    document.getElementById('btn-retry-cloud').addEventListener('click', () => {
+      if (lastResultRecord) submitScoreToCloud(lastResultRecord);
+    });
 
     // Download individual CSV report
     document.getElementById('btn-download-csv').addEventListener('click', () => {
@@ -2947,7 +2951,7 @@
       const perTv = (questions.length / 10).toFixed(1).replace('.0', '');
       const fb = document.getElementById('upload-feedback');
       fb.style.color = '#34d399';
-      fb.textContent = `✅ Berhasil memuat ${questions.length} soal dari ${sourceLabel} (~${perTv} soal per Monitor TV). Klik "Simpan & Update ke Cloud" untuk menerapkan!`;
+      fb.textContent = `✅ Berhasil memuat ${questions.length} soal dari ${sourceLabel} (~${perTv} soal per Monitor TV). Klik "Simpan Soal di Perangkat Ini" untuk menerapkan!`;
     }
 
     // File input handler
@@ -3117,27 +3121,8 @@
       gameState.answeredFlags = new Array(QUIZ_DATA.length).fill(false);
       buildLevel();
 
-      if (isCloudConnected && db && currentUser) {
-        try {
-          statusEl.style.color = '#facc15';
-          statusEl.textContent = 'Menyimpan pembaruan ke Cloud...';
-          const configDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'quiz_settings', 'active_config');
-          await setDoc(configDocRef, {
-            mapel: currentMapel,
-            teacherCode: teacherAccessCode,
-            quizzes: QUIZ_DATA,
-            updatedAt: Date.now()
-          });
-          statusEl.style.color = '#34d399';
-          statusEl.textContent = `✅ Berhasil disimpan ke Cloud! (${QUIZ_DATA.length} soal aktif untuk Mapel: ${currentMapel})`;
-        } catch (err) {
-          statusEl.style.color = '#fbbf24';
-          statusEl.textContent = `⚠️ Tersimpan di perangkat lokal (${QUIZ_DATA.length} soal). Sinkronisasi Cloud tertunda.`;
-        }
-      } else {
-        statusEl.style.color = '#34d399';
-        statusEl.textContent = `✅ Tersimpan di Mode Lokal! (${QUIZ_DATA.length} soal aktif untuk Mapel: ${currentMapel})`;
-      }
+      statusEl.style.color = '#fbbf24';
+      statusEl.textContent = `Tersimpan hanya di perangkat ini (${QUIZ_DATA.length} soal). Sinkronisasi soal guru belum diaktifkan demi keamanan.`;
     });
 
     // Reset to Default Questions
@@ -3146,7 +3131,7 @@
       renderManualQuizEditor();
       const statusEl = document.getElementById('teacher-save-status');
       statusEl.style.color = '#38bdf8';
-      statusEl.textContent = 'Soal bawaan (10 soal) dimuat ke editor. Klik "Simpan & Update ke Cloud" untuk menerapkan.';
+      statusEl.textContent = 'Soal bawaan (10 soal) dimuat ke editor. Klik "Simpan Soal di Perangkat Ini" untuk menerapkan.';
     });
 
     // Close Teacher Panel
@@ -3246,7 +3231,7 @@
           renderLiveDashboard();
           if (isCloudConnected && db && item.id) {
             try {
-              await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'student_scores', item.id));
+              // Cloud deletion disabled: teacher identity is not verified. Database remains unchanged.
             } catch (_) {}
           }
         };
@@ -3278,7 +3263,7 @@
         for (const item of toDelete) {
           if (item.id) {
             try {
-              await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'student_scores', item.id));
+              // Cloud deletion disabled: teacher identity is not verified. Database remains unchanged.
             } catch (_) {}
           }
         }
