@@ -1,0 +1,45 @@
+DASHBOARD GURU IBU RIA — PEMASANGAN TERSTRUKTUR
+=================================================
+GAME SISWA: https://mhafidzfurqon2026.github.io/Kuis_Ibu_Ria/
+DASHBOARD (setelah upload): https://mhafidzfurqon2026.github.io/Kuis_Ibu_Ria/dashboard/
+
+PRA-SYARAT: sudah ada data hasil_kuis dan game siswa berfungsi.
+
+TAHAP A: AKTIFKAN GOOGLE LOGIN
+1. Firebase Console > Authentication > Sign-in method > Add new provider.
+2. Pilih Google, Enable, isi email support project yang diminta, Save.
+3. Authentication > Settings > Authorized domains: pastikan
+   mhafidzfurqon2026.github.io sudah terdaftar. Tambahkan jika belum.
+
+TAHAP B: PASANG DASHBOARD TANPA MEMBUKA DATABASE
+4. Edit dashboard/index.html: ganti PASTE_API_KEY_DARI_FIREBASE_CONSOLE
+   dengan apiKey WEB dari Firebase Console > Project settings > Config.
+   Gunakan API key yang sama seperti versi game siswa yang sudah berfungsi.
+5. Di GitHub repo Kuis_Ibu_Ria, buat folder dashboard dengan file index.html
+   tersebut (Add file > Create new file, nama: dashboard/index.html).
+6. Commit. Buka URL dashboard/ di GitHub Pages; klik 'Masuk dengan Google'.
+7. UID Firebase akun Google guru muncul setelah login. Klik Salin UID.
+   Login bisa berhasil meskipun memuat nilai ditolak; itu normal.
+
+TAHAP C: IZINKAN HANYA GURU
+8. Buka file firestore.rules di paket ini memakai editor teks.
+9. Ganti PASTE_UID_AKUN_GOOGLE_GURU dengan UID yang disalin dari dashboard.
+   Jangan gunakan UID anonim siswa dari dokumen hasil_kuis.
+10. Firebase Console > Firestore Database > Rules: ganti seluruh Rules dengan
+    isi file yang sudah diedit. Klik Publish.
+11. Buka kembali dashboard, klik Muat ulang. Hasil Testing / nilai 90
+    seharusnya muncul.
+
+PENGAMAN DAN BATASAN
+- Dashboard hanya-baca. File rules mempertahankan aturan create yang lama.
+- UID guru harus dari login Google, BUKAN email atau UID anonim siswa.
+- Tidak ada akses admin hanya karena berhasil login Google.
+- CSV memakai data yang sedang terlihat setelah filter.
+- Nilai CLIENT_UNVERIFIED berasal dari browser siswa; belum layak disebut
+  validasi server atau sistem anti-curang.
+- Satu dokumen per UID anonim tidak sama dengan satu percobaan per siswa.
+- Jangan meletakkan service-account JSON, private key, atau password di GitHub.
+- Backup Rules sebelumnya dan file game sebelum perubahan.
+- Uji login dengan akun bukan guru: harus permission-denied untuk hasil_kuis.
+- Periksa Settings > Authorized domains jika popup error auth/unauthorized-domain.
+- Siswa anonim tidak akan bisa membaca hasil hanya karena aturan ini dipasang.

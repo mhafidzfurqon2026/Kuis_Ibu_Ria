@@ -1,0 +1,64 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Ganti nilai PLACEHOLDER dengan UID akun Google guru dari dashboard.
+    // Sampai diganti, seluruh pembacaan dari web tetap ditolak.
+    function isTeacher() {
+      return request.auth != null
+        && request.auth.uid == 'PASTE_UID_AKUN_GOOGLE_GURU'
+        && request.auth.token.firebase.sign_in_provider == 'google.com';
+    }
+    match /hasil_kuis/{studentUid} {
+      // Initial pilot only: student submissions are UNVERIFIED browser-calculated results.
+      // Firebase Admin console / Admin SDK can review these documents.
+      allow create: if request.auth != null
+        && request.auth.uid == studentUid
+        && request.resource.data.keys().hasOnly([
+          'uid', 'name', 'className', 'absen', 'mapel',
+          'totalQ', 'correct', 'wrong', 'score', 'coins',
+          'predikat', 'createdAt', 'verification'
+        ])
+        && request.resource.data.keys().hasAll([
+          'uid', 'name', 'className', 'absen', 'mapel',
+          'totalQ', 'correct', 'wrong', 'score', 'coins',
+          'predikat', 'createdAt', 'verification'
+        ])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 100
+        && request.resource.data.className is string
+        && request.resource.data.className.size() > 0
+        && request.resource.data.className.size() <= 80
+        && request.resource.data.absen is string
+        && request.resource.data.absen.size() > 0
+        && request.resource.data.absen.size() <= 3
+        && request.resource.data.mapel is string
+        && request.resource.data.mapel.size() <= 120
+        && request.resource.data.totalQ is int
+        && request.resource.data.totalQ >= 1
+        && request.resource.data.totalQ <= 200
+        && request.resource.data.correct is int
+        && request.resource.data.correct >= 0
+        && request.resource.data.correct <= request.resource.data.totalQ
+        && request.resource.data.wrong is int
+        && request.resource.data.wrong == request.resource.data.totalQ - request.resource.data.correct
+        && request.resource.data.score is int
+        && request.resource.data.score >= 0
+        && request.resource.data.score <= 100
+        && request.resource.data.coins is int
+        && request.resource.data.coins >= 0
+        && request.resource.data.coins <= 100000
+        && request.resource.data.predikat is string
+        && request.resource.data.predikat.size() <= 80
+        && request.resource.data.verification == 'CLIENT_UNVERIFIED'
+        && request.resource.data.createdAt == request.time;
+      // Hanya guru dengan UID terdaftar yang boleh melihat data.
+      allow get, list: if isTeacher();
+      allow update, delete: if false;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
