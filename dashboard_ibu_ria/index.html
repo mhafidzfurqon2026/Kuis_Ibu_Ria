@@ -16,11 +16,19 @@
 <div class="metrics"><div class="metric"><span>HASIL TERCATAT</span><strong id="totalStat">0</strong></div><div class="metric"><span>NILAI RATA-RATA</span><strong id="avgStat">0</strong></div><div class="metric"><span>NILAI TERTINGGI</span><strong id="maxStat">0</strong></div><div class="metric"><span>TUNTAS (≥75)</span><strong id="passStat">0</strong></div></div>
 <div class="panel"><h2 class="print-title">Rekap Hasil Kuis — Ibu Ria</h2><div class="toolbar"><input id="searchInput" type="search" placeholder="Cari nama siswa / nomor absen ..." aria-label="Cari siswa"><select id="classFilter" aria-label="Filter kelas"><option value="">Semua kelas</option></select><select id="passFilter" aria-label="Filter ketuntasan"><option value="">Semua hasil</option><option value="pass">Tuntas ≥75</option><option value="fail">Belum tuntas &lt;75</option></select></div>
 <div class="table-scroll"><table><thead><tr><th>No.</th><th>Waktu WIB</th><th>Nama Siswa</th><th>Kelas</th><th>Absen</th><th>Benar</th><th>Salah</th><th>Koin</th><th>Nilai</th><th>Predikat</th><th>Verifikasi</th></tr></thead><tbody id="scoreBody"><tr><td colspan="11" class="empty">Belum ada data ditampilkan.</td></tr></tbody></table></div><p class="foot" id="countText">—</p><p class="foot">Nilai saat ini berstatus <b>CLIENT_UNVERIFIED</b>: dihitung di browser dan belum divalidasi server. Dokumen <code>test_setup</code> diabaikan. Dashboard ini hanya dapat membaca; tidak dapat mengubah atau menghapus data.</p></div></section>
+<section id="bankPanel" class="panel hidden">
+<h2>Bank Soal Terpusat — Publikasi ke Game Siswa</h2>
+<p class="foot">Untuk latihan/pilot. Kunci jawaban dikirim ke browser siswa sehingga <strong>tidak aman untuk ujian resmi</strong>. Dashboard guru hanya bisa menerbitkan bank soal jika UID Google disetujui Firestore Rules.</p>
+<div class="toolbar"><input id="bankFile" type="file" accept=".csv,.tsv,.txt,.json" aria-label="File bank soal CSV atau JSON"><input id="bankMapel" value="Produk Kreatif dan Kewirausahaan (PKK)" aria-label="Nama mata pelajaran" maxlength="120"></div>
+<div class="head-actions"><button id="bankPreviewBtn" class="btn alt" type="button">1. Periksa File</button><button id="bankPublishBtn" class="btn" type="button" disabled>2. Publikasikan ke Firebase</button><button id="bankReloadBtn" class="btn alt" type="button">Cek Bank Aktif</button></div>
+<div id="bankMessage" class="notice">Pilih file CSV sesuai template game, lalu klik Periksa File.</div>
+<p class="foot" id="bankPreview">Belum ada file dipilih.</p>
+</section>
 </main>
 <script type="module">
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
 import {getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut} from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-import {getFirestore, collection, getDocs} from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+import {getFirestore, collection, getDocs, doc, getDoc, setDoc, serverTimestamp} from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 // Masukkan apiKey publik dari Firebase Console > Project settings > Your apps > Config.
 // Jangan pernah memasukkan service-account key atau password guru ke file ini.
 const firebaseConfig = {
@@ -54,8 +62,85 @@ function render(){
 function fillClassOptions(){const select=el('classFilter'),old=select.value;select.replaceChildren(new Option('Semua kelas',''));[...new Set(state.records.map(r=>r.className).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'id')).forEach(x=>select.add(new Option(x,x)));select.value=[...select.options].some(o=>o.value===old)?old:'';}
 function exportCsv(){const headings=['No','Waktu WIB','Nama Siswa','Kelas','Absen','Benar','Salah','Total Soal','Koin','Nilai','Predikat','Verifikasi'];const rows=state.filtered.map((r,i)=>[i+1,formatDate(r.createdAt),r.name||'',r.className||'',r.absen||'',safeNum(r.correct),safeNum(r.wrong),safeNum(r.totalQ),safeNum(r.coins),safeNum(r.score),r.predikat||'',r.verification||'']);const sanitize=x=>{let s=String(x??'');if(/^[\s\x00-\x1f]*[=+@-]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"';};const csv='\uFEFF'+[headings,...rows].map(row=>row.map(sanitize).join(';')).join('\r\n');const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='rekap_nilai_ibu_ria_'+new Date().toISOString().slice(0,10)+'.csv';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 let db,auth;
-async function fetchScores(){if(!state.user)return;el('refreshBtn').disabled=true;setMessage('syncStatus','Mengambil hasil kuis dari Firestore ...');try{const snap=await getDocs(collection(db,'hasil_kuis'));state.records=snap.docs.map(d=>({id:d.id,...d.data()})).filter(r=>typeof r.name==='string' && typeof r.score==='number').sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));fillClassOptions();render();setMessage('syncStatus',`Berhasil memuat ${state.records.length} hasil dari Firestore.`, 'ok');}catch(e){state.records=[];state.filtered=[];fillClassOptions();render();const denied=e?.code==='permission-denied';setMessage('syncStatus',denied?'Akses ditolak (permission-denied). Akun Google ini belum diberi hak guru pada Firestore Rules. Salin UID dari panel login dan masukkan ke aturan.':'Gagal memuat Firestore: '+(e?.code||e?.message||'kesalahan tak dikenal'),'error');el('loginPanel').classList.remove('hidden');el('uidPanel').classList.remove('hidden');}finally{el('refreshBtn').disabled=false;}}
-function setSignedIn(user){if(user && (user.isAnonymous || !user.providerData?.some(p=>p.providerId==='google.com'))){state.user=null;el('loginPanel').classList.remove('hidden');el('dashboard').classList.add('hidden');el('logoutBtn').classList.add('hidden');el('loginBtn').classList.remove('hidden');el('uidPanel').classList.add('hidden');setMessage('authMessage','Sesi siswa anonim terdeteksi. Silakan masuk dengan akun Google guru.');return;}state.user=user;el('logoutBtn').classList.toggle('hidden',!user);el('dashboard').classList.toggle('hidden',!user);el('loginBtn').classList.toggle('hidden',!!user);el('uidPanel').classList.toggle('hidden',!user);if(user){el('teacherUid').textContent=user.uid;el('teacherIdentity').textContent=`Login: ${user.displayName||'Google User'} (${user.email||'tanpa email'})`;setMessage('authMessage','Login Google berhasil. Akses data tetap memerlukan izin UID guru di Firestore Rules.','ok');fetchScores();}else{el('loginPanel').classList.remove('hidden');setMessage('authMessage','Belum login.');state.records=[];state.filtered=[];}}
+async function fetchScores(){if(!state.user)return;el('refreshBtn').disabled=true;setMessage('syncStatus','Mengambil hasil kuis dari Firestore ...');try{const snap=await getDocs(collection(db,'hasil_kuis'));state.records=snap.docs.map(d=>({id:d.id,...d.data()})).filter(r=>typeof r.name==='string' && typeof r.score==='number').sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));fillClassOptions();render();setMessage('syncStatus',`Berhasil memuat ${state.records.length} hasil dari Firestore.`, 'ok');el('bankPanel').classList.remove('hidden');}catch(e){state.records=[];state.filtered=[];el('bankPanel').classList.add('hidden');fillClassOptions();render();const denied=e?.code==='permission-denied';setMessage('syncStatus',denied?'Akses ditolak (permission-denied). Akun Google ini belum diberi hak guru pada Firestore Rules. Salin UID dari panel login dan masukkan ke aturan.':'Gagal memuat Firestore: '+(e?.code||e?.message||'kesalahan tak dikenal'),'error');el('loginPanel').classList.remove('hidden');el('uidPanel').classList.remove('hidden');}finally{el('refreshBtn').disabled=false;}}
+// Import CSV mendukung kutip ganda dan delimiter ; , TAB.
+let bankDraft=null;
+function csvRows(text, delimiter) {
+  let rows=[], row=[], cell='', quoted=false;
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(ch==='"') {if(quoted && text[i+1]==='"'){cell+='"';i++;}else quoted=!quoted;}
+    else if(ch===delimiter && !quoted){row.push(cell);cell='';}
+    else if((ch==='\n'||ch==='\r')&&!quoted){if(ch==='\r'&&text[i+1]==='\n')i++;row.push(cell);if(row.some(x=>x.trim()))rows.push(row);row=[];cell='';}
+    else cell+=ch;
+  }
+  if(quoted)throw Error('Tanda kutip CSV tidak berpasangan.');
+  row.push(cell);if(row.some(x=>x.trim()))rows.push(row);
+  return rows;
+}
+function parseBank(text) {
+  text=text.replace(/^\uFEFF/,'').replace(/^sep\s*=\s*[;,\t]\s*\r?\n/i,'').trim();
+  if(!text)throw Error('File kosong.');
+  let questions;
+  if(text.startsWith('[')||text.startsWith('{')){
+    const data=JSON.parse(text);questions=Array.isArray(data)?data:data.questions||data.quizzes;
+    if(!Array.isArray(questions))throw Error('JSON perlu array soal.');
+    questions=questions.map(x=>({question:String(x.question||x.pertanyaan||'').trim(),options:Array.isArray(x.options)?x.options:[x.A,x.B,x.C,x.D,x.E].filter(v=>v!==undefined&&v!==''),answerIndex:Number.isInteger(x.answerIndex)?x.answerIndex:keyIndex(x.kunci||x.answer)}));
+  }else{
+    const first=text.split(/\r?\n/,1)[0];
+    const delimiter=[';',',','\t'].sort((a,b)=>(first.split(b).length-first.split(a).length))[0];
+    const rows=csvRows(text,delimiter);
+    if(!rows.length)throw Error('CSV kosong.');
+    let header=rows[0].map(x=>x.trim().toLowerCase().replace(/\s+/g,' '));
+    const isHeader=header.some(x=>x.includes('pertanyaan')||x==='kunci');
+    if(!isHeader)throw Error('CSV harus memiliki header Nomor;Pertanyaan;Pilihan A;Pilihan B;Pilihan C;Pilihan D;Pilihan E;Kunci.');
+    const col=names=>header.findIndex(x=>names.includes(x));
+    const qi=col(['pertanyaan','question']), ai=col(['pilihan a','a']),bi=col(['pilihan b','b']),ci=col(['pilihan c','c']),di=col(['pilihan d','d']),ei=col(['pilihan e','e']),ki=col(['kunci','jawaban','answer']);
+    if([qi,ai,bi,ci,di,ki].some(x=>x<0))throw Error('Header CSV tidak lengkap.');
+    questions=rows.slice(1).map(r=>({question:(r[qi]||'').trim(),options:[r[ai],r[bi],r[ci],r[di],ei>=0?r[ei]:null].filter(v=>v!=null&&String(v).trim()!=='').map(v=>String(v).trim()),answerIndex:keyIndex(r[ki])}));
+  }
+  if(questions.length<10||questions.length>200)throw Error('Jumlah soal harus 10–200 (sekarang '+questions.length+').');
+  questions.forEach((q,i)=>{
+    q.question=String(q.question||'').trim();
+    q.options=(q.options||[]).map(x=>String(x).trim());
+    if(!q.question||q.question.length>1500||![4,5].includes(q.options.length)||q.options.some(x=>!x||x.length>500)||!Number.isInteger(q.answerIndex)||q.answerIndex<0||q.answerIndex>=q.options.length)throw Error('Soal nomor '+(i+1)+' tidak lengkap / kunci salah.');
+  });
+  return questions;
+}
+function keyIndex(value){const s=String(value??'').trim().toUpperCase();return /^[A-E]$/.test(s)?s.charCodeAt(0)-65:/^[1-5]$/.test(s)?Number(s)-1:-1;}
+function bankMsg(msg,type=''){setMessage('bankMessage',msg,type);}
+async function inspectBank(){
+  bankDraft=null;el('bankPublishBtn').disabled=true;
+  const file=el('bankFile').files[0];if(!file){bankMsg('Pilih file CSV/JSON terlebih dahulu.','error');return;}
+  if(file.size>800000){bankMsg('File terlalu besar (maksimum 800 KB).','error');return;}
+  try{
+    const qs=parseBank(await file.text());
+    const mapel=el('bankMapel').value.trim();if(!mapel||mapel.length>120)throw Error('Mata pelajaran harus diisi (maksimum 120 karakter).');
+    bankDraft={questions:qs,mapel};el('bankPreview').textContent=`VALID: ${qs.length} soal (~${(qs.length/10).toFixed(1)} per TV). Contoh soal 1: ${qs[0].question.slice(0,160)} | Pilihan: ${qs[0].options.length}. Kunci A–E tersedia.`;
+    el('bankPublishBtn').disabled=false;bankMsg('File lolos validasi awal. Klik Publikasikan hanya jika soal siap dibagikan ke siswa.','ok');
+  }catch(e){el('bankPreview').textContent='File tidak valid.';bankMsg('Gagal: '+e.message,'error');}
+}
+async function publishBank(){
+  if(!bankDraft||!state.user)return;
+  if(!confirm(`Publikasikan ${bankDraft.questions.length} soal ke semua siswa yang membuka game? Soal aktif sebelumnya akan diganti.`))return;
+  el('bankPublishBtn').disabled=true;
+  try{
+    await setDoc(doc(db,'quiz_bank','active'),{...bankDraft,status:'published',updatedAt:serverTimestamp(),schemaVersion:1});
+    bankMsg(`BERHASIL: ${bankDraft.questions.length} soal diterbitkan. Siswa perlu refresh sebelum mulai game.`, 'ok');
+    bankDraft=null;
+  }catch(e){bankMsg('Publikasi ditolak/gagal: '+(e.code||e.message)+' — pastikan UID guru cocok dengan Rules.','error');el('bankPublishBtn').disabled=false;}
+}
+async function checkBank(){
+  try{
+    const s=await getDoc(doc(db,'quiz_bank','active'));
+    bankMsg(s.exists()?`Bank aktif: ${s.data().questions?.length||0} soal, mapel ${s.data().mapel||'-'}.`:'Belum ada bank soal aktif di Firestore.',s.exists()?'ok':'');
+  }catch(e){bankMsg('Tidak dapat membaca bank soal: '+(e.code||e.message),'error');}
+}
+el('bankPreviewBtn').addEventListener('click',inspectBank);
+el('bankPublishBtn').addEventListener('click',publishBank);
+el('bankReloadBtn').addEventListener('click',checkBank);
+
+function setSignedIn(user){if(user && (user.isAnonymous || !user.providerData?.some(p=>p.providerId==='google.com'))){state.user=null;el('bankPanel').classList.add('hidden');el('loginPanel').classList.remove('hidden');el('dashboard').classList.add('hidden');el('logoutBtn').classList.add('hidden');el('loginBtn').classList.remove('hidden');el('uidPanel').classList.add('hidden');setMessage('authMessage','Sesi siswa anonim terdeteksi. Silakan masuk dengan akun Google guru.');return;}state.user=user;el('logoutBtn').classList.toggle('hidden',!user);el('dashboard').classList.toggle('hidden',!user);el('loginBtn').classList.toggle('hidden',!!user);el('uidPanel').classList.toggle('hidden',!user);if(user){el('teacherUid').textContent=user.uid;el('teacherIdentity').textContent=`Login: ${user.displayName||'Google User'} (${user.email||'tanpa email'})`;setMessage('authMessage','Login Google berhasil. Akses data tetap memerlukan izin UID guru di Firestore Rules.','ok');fetchScores();}else{el('loginPanel').classList.remove('hidden');setMessage('authMessage','Belum login.');state.records=[];state.filtered=[];}}
 if(firebaseConfig.apiKey.startsWith('PASTE_')){el('loginBtn').disabled=true;setMessage('authMessage','Setup belum selesai: isi apiKey Firebase web di dashboard_ibu_ria/index.html sebelum upload.','error');}else{
   const app=initializeApp(firebaseConfig);auth=getAuth(app);db=getFirestore(app);
   const provider=new GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});
