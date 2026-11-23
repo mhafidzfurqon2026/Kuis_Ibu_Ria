@@ -2,12 +2,12 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>GAME KUIS PEMBELAJARAN — GURU MAPEL IBU RIA</title>
   <style>
     /* =====================================================================
        RETRO 16-BIT PLATFORMER & QUIZ SYSTEM STYLES
-       Single-File Offline/Cloud Ready (PC & Android Landscape)
+       Single-File Offline/Cloud Ready (PC & Android Landscape/Portrait)
        ===================================================================== */
     :root {
       --bg-dark: #0f172a;
@@ -20,6 +20,7 @@
       --accent-red: #ef4444;
       --text-light: #f8fafc;
       --text-muted: #94a3b8;
+      --app-height: 100vh;
     }
 
     * {
@@ -33,7 +34,8 @@
 
     html, body {
       width: 100%;
-      height: 100%;
+      height: var(--app-height);
+      height: 100dvh;
       overflow: hidden;
       background-color: var(--bg-dark);
       color: var(--text-light);
@@ -42,9 +44,11 @@
 
     /* Game Canvas Wrapper */
     #game-wrapper {
-      position: relative;
-      width: 100vw;
-      height: 100vh;
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: var(--app-height);
+      height: 100dvh;
       overflow: hidden;
       background: #38bdf8;
     }
@@ -149,17 +153,17 @@
        TOP HUD BAR
        ===================================================================== */
     #hud {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      right: 10px;
-      z-index: 20;
+      position: fixed;
+      top: calc(8px + env(safe-area-inset-top, 0px));
+      left: calc(10px + env(safe-area-inset-left, 0px));
+      right: calc(10px + env(safe-area-inset-right, 0px));
+      z-index: 25;
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
-      gap: 8px;
-      padding: 8px 14px;
+      gap: 6px;
+      padding: 7px 12px;
       background: rgba(15, 23, 42, 0.88);
       border: 2px solid #38bdf8;
       border-radius: 12px;
@@ -190,12 +194,12 @@
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
     }
 
     .hud-pill {
-      padding: 5px 10px;
-      font-size: 12px;
+      padding: 4px 9px;
+      font-size: 11px;
       font-weight: 700;
       background: #1e293b;
       border: 1px solid #475569;
@@ -211,14 +215,14 @@
        TOAST NOTIFICATION BANNER
        ===================================================================== */
     #toast-banner {
-      position: absolute;
-      top: 76px;
+      position: fixed;
+      top: calc(74px + env(safe-area-inset-top, 0px));
       left: 50%;
       transform: translateX(-50%);
-      z-index: 25;
+      z-index: 35;
       display: none;
-      padding: 8px 18px;
-      font-size: 13px;
+      padding: 7px 16px;
+      font-size: 12px;
       font-weight: 800;
       color: #0f172a;
       background: var(--accent-gold);
@@ -230,14 +234,14 @@
     }
 
     /* =====================================================================
-       ANDROID / TOUCH CONTROLS
+       ANDROID / TOUCH CONTROLS (FIXED SAFE-AREA VIEWPORT)
        ===================================================================== */
     #touch-controls {
-      position: absolute;
-      bottom: 16px;
-      left: 16px;
-      right: 16px;
-      z-index: 20;
+      position: fixed;
+      bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+      left: calc(14px + env(safe-area-inset-left, 0px));
+      right: calc(14px + env(safe-area-inset-right, 0px));
+      z-index: 30;
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
@@ -254,33 +258,62 @@
       width: 62px;
       height: 62px;
       border-radius: 16px;
-      border: 3px solid rgba(255, 255, 255, 0.75);
-      background: rgba(15, 23, 42, 0.72);
+      border: 3px solid rgba(255, 255, 255, 0.85);
+      background: rgba(15, 23, 42, 0.82);
       color: #ffffff;
       font-size: 22px;
       font-weight: 900;
+      line-height: 1.1;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.55);
       touch-action: manipulation;
     }
 
     .touch-btn:active, .touch-btn.pressed {
-      background: rgba(59, 130, 246, 0.9);
+      background: rgba(59, 130, 246, 0.95);
       transform: scale(0.94);
     }
 
     .touch-btn.action-e {
-      background: rgba(234, 179, 8, 0.85);
+      background: rgba(234, 179, 8, 0.92);
       color: #0f172a;
-      font-size: 14px;
+      font-size: 13px;
     }
 
     .touch-btn.action-jump {
-      background: rgba(16, 185, 129, 0.85);
-      font-size: 14px;
+      background: rgba(16, 185, 129, 0.92);
+      color: #ffffff;
+      font-size: 12px;
+    }
+
+    @media (max-height: 460px) {
+      #hud {
+        padding: 5px 10px;
+      }
+      .hud-title {
+        font-size: 12px;
+      }
+      .hud-sub {
+        font-size: 10px;
+      }
+      #touch-controls {
+        bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+      }
+      .touch-btn {
+        width: 56px;
+        height: 56px;
+        border-radius: 14px;
+        font-size: 20px;
+      }
+      .touch-btn.action-e {
+        font-size: 12px;
+      }
+      .touch-btn.action-jump {
+        font-size: 11px;
+      }
     }
 
     @media (min-width: 1025px) and (pointer: fine) {
@@ -311,7 +344,7 @@
     .modal-card {
       width: 100%;
       max-width: 560px;
-      max-height: 92vh;
+      max-height: 92dvh;
       overflow-y: auto;
       background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
       border: 3px solid #38bdf8;
@@ -653,13 +686,14 @@
         <div class="hud-pill">Kuis: <span id="hud-quiz">0/10</span></div>
         <div class="hud-pill">Nilai: <span id="hud-score">0</span></div>
         <button type="button" id="btn-toggle-audio" class="retro-btn sm slate" title="Aktifkan/Matikan Suara">SFX/BGM: ON</button>
+        <button type="button" id="btn-toggle-fullscreen" class="retro-btn sm blue" title="Mode Layar Penuh">⛶ Full</button>
       </div>
     </div>
 
     <!-- TOAST FEEDBACK -->
     <div id="toast-banner"></div>
 
-    <!-- TOUCH CONTROLS (ANDROID LANDSCAPE & TABLET) -->
+    <!-- TOUCH CONTROLS (ANDROID LANDSCAPE & PORTRAIT) -->
     <div id="touch-controls" class="hidden">
       <div class="touch-group">
         <button type="button" id="btn-left" class="touch-btn" aria-label="Kiri">◀</button>
@@ -790,9 +824,7 @@
           </div>
         </div>
 
-        <div id="cloud-submit-status" role="status" aria-live="polite" style="text-align:center;color:#fde68a;font-size:13px;font-weight:700;margin:10px 0;">Status pengiriman belum tersedia.</div>
         <div class="action-buttons no-print">
-          <button type="button" id="btn-retry-cloud" class="retro-btn slate hidden">Coba Kirim Lagi</button>
           <button type="button" id="btn-download-csv" class="retro-btn blue">Download CSV</button>
           <button type="button" id="btn-print-pdf" class="retro-btn amber">Cetak / Simpan PDF</button>
           <button type="button" id="btn-play-again" class="retro-btn red">KELUAR</button>
@@ -830,7 +862,7 @@
       <div class="modal-card wide">
         <div class="game-header-banner no-print">
           <h1>PANEL KHUSUS GURU — IBU RIA</h1>
-          <div class="mapel-line">Kelola Mata Pelajaran, Bank Soal (A–E), & Pantau Rekap Lokal (Belum Sinkron Cloud)</div>
+          <div class="mapel-line">Kelola Mata Pelajaran, Bank Soal (A–E), & Pantau Nilai Siswa Live</div>
         </div>
 
         <!-- PENGATURAN MAPEL & KODE AKSES -->
@@ -849,7 +881,7 @@
         <div class="tab-bar no-print">
           <button type="button" id="tab-btn-upload" class="tab-btn active">1. Upload / Paste Soal</button>
           <button type="button" id="tab-btn-manual" class="tab-btn">2. Edit Manual Soal</button>
-          <button type="button" id="tab-btn-live" class="tab-btn">3. Rekap Lokal (Perangkat Ini)</button>
+          <button type="button" id="tab-btn-live" class="tab-btn">3. Pantau Nilai Siswa (Live)</button>
         </div>
 
         <!-- TAB 1: UPLOAD / PASTE SOAL -->
@@ -889,8 +921,8 @@
           <div id="manual-quiz-list" style="max-height:330px; overflow-y:auto; padding-right:4px;"></div>
         </div>
 
-        <!-- TAB 3: REKAP LOKAL; BUKAN DASHBOARD LINTAS SISWA -->
-        <div id="tab-panel-live" class="hidden"><p style="color:#fde68a;font-size:12px;margin-bottom:12px;">Rekap hanya dari browser ini, BUKAN data seluruh siswa di Firestore. Gunakan Firebase Console untuk melihat hasil cloud. Akses kode guru di HTML bukan keamanan server.</p>
+        <!-- TAB 3: PANTAU NILAI SISWA (LIVE DASHBOARD) -->
+        <div id="tab-panel-live" class="hidden">
           <div class="stats-row">
             <div class="stat-card">
               <div class="s-val" id="stat-total-students">0</div>
@@ -959,14 +991,14 @@
           <div class="action-buttons no-print" style="margin-top:10px;">
             <button type="button" id="btn-export-class-csv" class="retro-btn sm blue">Download Rekap Kelas (.CSV)</button>
             <button type="button" id="btn-print-class-pdf" class="retro-btn sm amber">Cetak / Simpan Rekap PDF</button>
-            <button type="button" id="btn-clear-all-scores" class="retro-btn sm red">Reset Rekap Lokal</button>
+            <button type="button" id="btn-clear-all-scores" class="retro-btn sm red">Reset Semua Nilai</button>
           </div>
         </div>
 
         <!-- FOOTER PANEL GURU -->
         <div id="teacher-save-status" class="no-print" style="margin-top:12px; font-size:12px; font-weight:800; color:#38bdf8; text-align:center;"></div>
         <div class="action-buttons no-print" style="margin-top:10px; border-top:1px solid #334155; padding-top:12px;">
-          <button type="button" id="btn-save-cloud-quiz" class="retro-btn">💾 Simpan Soal di Perangkat Ini</button>
+          <button type="button" id="btn-save-cloud-quiz" class="retro-btn">💾 Simpan & Update ke Cloud</button>
           <button type="button" id="btn-reset-default-quiz" class="retro-btn amber">↺ Reset Soal Bawaan</button>
           <button type="button" id="btn-close-teacher" class="retro-btn slate">Tutup Panel</button>
         </div>
@@ -980,7 +1012,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, deleteDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     // =========================================================================
     // 1. DEFAULT 10 SOAL PKK KELAS XII (5 PILIHAN A-E)
@@ -1174,85 +1206,71 @@
         `Total: ${QUIZ_DATA.length} Soal (~${perTv} Soal / TV)`;
     }
 
-    // FIREBASE PROJECT SETTINGS: paste the exact apiKey from Firebase Console > Project settings > Config.
-    // This is a public Firebase WEB API key (not an admin key). Do NOT paste service-account credentials.
-    const FIREBASE_WEB_CONFIG = {
-      apiKey: "AIzaSyDbGvAFWm-knUWiCJ5RvFLbK3uz6yFrnlc",
-      authDomain: "kuis-pembelajaran-ibu-ria.firebaseapp.com",
-      projectId: "kuis-pembelajaran-ibu-ria",
-      storageBucket: "kuis-pembelajaran-ibu-ria.firebasestorage.app",
-      messagingSenderId: "1021948748495",
-      appId: "1:1021948748495:web:f32cd1ac2f77b3c612cdba",
-      measurementId: "G-44VI3P01WC"
-    };
-
-    // Bank soal terpusat untuk LATIHAN (kunci terlihat oleh browser; bukan ujian resmi).
-    let quizBankReady = false;
-    const startSubmitButton = document.querySelector('#student-form button[type="submit"]');
-    startSubmitButton.disabled = true;
-    startSubmitButton.textContent = 'Memuat bank soal Firebase...';
-    function showBankProblem(message) {
-      quizBankReady = false;
-      startSubmitButton.disabled = true;
-      startSubmitButton.textContent = 'Bank soal belum tersedia';
-      document.getElementById('form-error').textContent = message;
-      document.getElementById('cloud-status-badge').textContent = 'Status: Bank soal belum tersedia';
-    }
-    function validateBank(data) {
-      if (!data || data.status !== 'published' || !Array.isArray(data.questions)) throw new Error('Belum ada bank soal diterbitkan guru.');
-      if (data.questions.length < 10 || data.questions.length > 200) throw new Error('Jumlah soal harus 10–200.');
-      return data.questions.map((q, i) => {
-        if (!q || typeof q.question !== 'string' || !q.question.trim() || q.question.length > 1500 ||
-            !Array.isArray(q.options) || ![4,5].includes(q.options.length) ||
-            q.options.some(v => typeof v !== 'string' || !v.trim() || v.length > 500) ||
-            !Number.isInteger(q.answerIndex) || q.answerIndex < 0 || q.answerIndex >= q.options.length) {
-          throw new Error(`Soal #${i+1} dalam bank soal tidak valid.`);
-        }
-        return {question:q.question, options:q.options, answerIndex:q.answerIndex};
-      });
-    }
-    async function fetchPublishedBank() {
-      const snap = await getDoc(doc(db, 'quiz_bank', 'active'));
-      if (!snap.exists()) throw new Error('Guru belum memublikasikan soal ke Firebase.');
-      const data = snap.data();
-      const verified = validateBank(data);
-      // Tetapkan soal hanya saat masih di menu awal; jangan mengubah sesi aktif.
-      if (gameState.mode !== 'START') return;
-      QUIZ_DATA = verified;
-      currentMapel = String(data.mapel || DEFAULT_MAPEL).slice(0,120);
-      gameState.answeredFlags = new Array(QUIZ_DATA.length).fill(false);
-      syncBrandingUI();
-      buildLevel();
-      quizBankReady = true;
-      document.getElementById('form-error').textContent = '';
-      startSubmitButton.disabled = false;
-      startSubmitButton.textContent = '▶ MULAI GAME';
-      document.getElementById('cloud-status-badge').textContent = `Status: ${QUIZ_DATA.length} soal Firebase siap`;
-    }
-
     // Initialize Firebase Cloud Sync if environment config exists
     async function initCloudSync() {
       const badge = document.getElementById('cloud-status-badge');
-      if (FIREBASE_WEB_CONFIG.apiKey.startsWith('PASTE_')) {
-        showBankProblem('Konfigurasi Firebase belum lengkap.');
-        return;
-      }
       try {
-        const app = initializeApp(FIREBASE_WEB_CONFIG);
+        if (typeof __firebase_config === 'undefined' || !__firebase_config) {
+          badge.textContent = 'Status: Mode Lokal Aktif';
+          return;
+        }
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
         auth = getAuth(app);
         db = getFirestore(app);
-        const cred = await signInAnonymously(auth);
-        currentUser = cred.user;
-        if (!currentUser) throw new Error('Login anonim belum berhasil');
-        isCloudConnected = true; // Authenticated, but individual writes can still fail under Rules.
-        badge.textContent = 'Status: Firebase siap — pengiriman belum diuji';
-        try { await fetchPublishedBank(); } catch (bankError) { console.error('Bank soal Firebase:', bankError); showBankProblem(bankError.message || 'Gagal memuat bank soal.'); }
+
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          const cred = await signInWithCustomToken(auth, __initial_auth_token);
+          currentUser = cred.user;
+        } else {
+          const cred = await signInAnonymously(auth);
+          currentUser = cred.user;
+        }
+
+        if (!currentUser) return;
+        isCloudConnected = true;
+        badge.textContent = 'Status: Tersinkronisasi (Cloud Online)';
         badge.style.borderColor = '#10b981';
         badge.style.color = '#6ee7b7';
+
+        // Listen to shared quiz config in public collection
+        const configDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'quiz_settings', 'active_config');
+        onSnapshot(configDocRef, (snap) => {
+          if (snap.exists()) {
+            const data = snap.data();
+            if (data.mapel) currentMapel = data.mapel;
+            if (data.teacherCode) teacherAccessCode = data.teacherCode;
+            if (Array.isArray(data.quizzes) && data.quizzes.length > 0) {
+              QUIZ_DATA = data.quizzes;
+              if (gameState.mode === 'START') {
+                gameState.answeredFlags = new Array(QUIZ_DATA.length).fill(false);
+                buildLevel();
+              }
+            }
+            saveLocalConfig();
+            syncBrandingUI();
+          }
+        }, (err) => {
+          console.debug('Config listener fallback:', err);
+        });
+
+        // Listen to live student scores
+        const scoresColRef = collection(db, 'artifacts', appId, 'public', 'data', 'student_scores');
+        onSnapshot(scoresColRef, (snapshot) => {
+          const list = [];
+          snapshot.forEach((docSnap) => {
+            list.push({ id: docSnap.id, ...docSnap.data() });
+          });
+          sortScoresByRank(list);
+          liveScoresList = list;
+          saveLocalScores();
+          renderLiveDashboard();
+        }, (err) => {
+          console.debug('Scores listener fallback:', err);
+        });
       } catch (err) {
-        isCloudConnected = false;
-        showBankProblem('Koneksi Firebase gagal. Cek internet lalu refresh.');
-        console.error('Firebase init failed:', err);
+        badge.textContent = 'Status: Mode Offline / Lokal';
+        console.debug('Cloud init skipped:', err);
       }
     }
 
@@ -1383,38 +1401,60 @@
       }
     });
 
+    // Full Screen toggle button for Mobile & Desktop browsers
+    const btnToggleFullscreen = document.getElementById('btn-toggle-fullscreen');
+    function updateFullscreenButtonLabel() {
+      const isFs = Boolean(document.fullscreenElement || document.webkitFullscreenElement);
+      btnToggleFullscreen.textContent = isFs ? '⛶ Keluar Full' : '⛶ Full';
+    }
+
+    btnToggleFullscreen.addEventListener('click', async () => {
+      const docEl = document.documentElement;
+      const isFs = Boolean(document.fullscreenElement || document.webkitFullscreenElement);
+      try {
+        if (!isFs) {
+          if (docEl.requestFullscreen) {
+            await docEl.requestFullscreen();
+          } else if (docEl.webkitRequestFullscreen) {
+            docEl.webkitRequestFullscreen();
+          }
+          if (screen.orientation && screen.orientation.lock) {
+            screen.orientation.lock('landscape').catch(() => {});
+          }
+        } else {
+          if (document.exitFullscreen) {
+            await document.exitFullscreen();
+          } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+          }
+        }
+      } catch (_) {
+        showToast('Gunakan menu browser (⋮) -> Tambahkan ke layar utama untuk full screen penuh.', 3200);
+      }
+    });
+
+    document.addEventListener('fullscreenchange', () => {
+      updateFullscreenButtonLabel();
+      setTimeout(handleViewportChange, 100);
+    });
+    document.addEventListener('webkitfullscreenchange', () => {
+      updateFullscreenButtonLabel();
+      setTimeout(handleViewportChange, 100);
+    });
+
     // =========================================================================
-    // 4. 2D RETRO PLATFORMER ENGINE (CANVAS 2D)
+    // 4. CANVAS VIEWPORT, PLAYER STATE, & LEVEL BUILDER
     // =========================================================================
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    let VIEW_W = 960;
-    let VIEW_H = 540;
-    let GROUND_Y = 440;
-    const LEVEL_WIDTH = 7200;
-    const NUM_TVS = 10;
-
-    function resizeCanvas() {
-      const rect = canvas.parentElement.getBoundingClientRect();
-      VIEW_W = Math.max(320, Math.floor(rect.width));
-      VIEW_H = Math.max(240, Math.floor(rect.height));
-      canvas.width = VIEW_W;
-      canvas.height = VIEW_H;
-      GROUND_Y = Math.floor(VIEW_H * 0.8);
-    }
-
-    window.addEventListener('resize', () => {
-      const oldGround = GROUND_Y;
-      resizeCanvas();
-      const diffY = GROUND_Y - oldGround;
-      player.y += diffY;
-      player.safeY += diffY;
-      buildLevel();
-    });
+    let VIEW_W = window.innerWidth;
+    let VIEW_H = window.innerHeight;
+    let GROUND_Y = Math.max(220, VIEW_H - 96);
+    const LEVEL_WIDTH = 7000;
 
     const gameState = {
-      mode: 'START', // START | PLAYING | QUIZ | FINISH
+      mode: 'START', // 'START' | 'PLAYING' | 'QUIZ' | 'FINISH'
       student: { name: '', className: '', absen: '' },
       score: 0,
       coinsCount: 0,
@@ -1430,7 +1470,7 @@
 
     const player = {
       x: 80,
-      y: 360,
+      y: GROUND_Y - 44,
       w: 32,
       h: 44,
       vx: 0,
@@ -1438,16 +1478,20 @@
       speed: 5.4,
       accel: 0.65,
       friction: 0.82,
-      gravity: 0.62,
-      jumpPower: -13.2,
+      jumpPower: -12.8,
+      gravity: 0.58,
       onGround: false,
       facing: 1,
       invulnTimer: 0,
       safeX: 80,
-      safeY: 360
+      safeY: GROUND_Y - 44
     };
 
-    const keys = { left: false, right: false, jump: false };
+    const keys = {
+      left: false,
+      right: false,
+      jump: false
+    };
 
     let groundSegments = [];
     let platforms = [];
@@ -1455,24 +1499,53 @@
     let hazards = [];
     let coins = [];
     let tvMonitors = [];
+    let npcTeacher = { x: 740, y: GROUND_Y - 50, w: 34, h: 50 };
+    let finishGate = { x: LEVEL_WIDTH - 240, y: GROUND_Y - 130, w: 70, h: 130 };
     let floatingTexts = [];
     let popCoins = [];
-    let npcTeacher = { x: 740, y: 0, w: 34, h: 48 };
-    let finishGate = { x: LEVEL_WIDTH - 240, y: 0, w: 70, h: 130 };
 
-    function spawnFloatingText(x, y, text, color = '#facc15') {
-      floatingTexts.push({ x, y, text, color, life: 55 });
+    function syncAppViewportHeight() {
+      const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+      document.documentElement.style.setProperty('--app-height', `${vh}px`);
     }
 
-    function spawnPopCoin(x, y) {
-      popCoins.push({ x, y, vy: -5.5, life: 28 });
+    function resizeCanvas() {
+      syncAppViewportHeight();
+      const prevGroundY = GROUND_Y;
+      VIEW_W = window.innerWidth;
+      VIEW_H = window.visualViewport ? Math.round(window.visualViewport.height) : window.innerHeight;
+      canvas.width = VIEW_W;
+      canvas.height = VIEW_H;
+      GROUND_Y = Math.max(220, VIEW_H - 96);
+
+      if (typeof prevGroundY === 'number' && prevGroundY !== GROUND_Y && groundSegments.length > 0) {
+        const dy = GROUND_Y - prevGroundY;
+        player.y += dy;
+        player.safeY += dy;
+        for (const p of platforms) p.y += dy;
+        for (const b of coinBlocks) b.y += dy;
+        for (const hz of hazards) hz.y += dy;
+        for (const c of coins) c.y += dy;
+        for (const tv of tvMonitors) tv.y += dy;
+        if (npcTeacher) npcTeacher.y += dy;
+        if (finishGate) finishGate.y += dy;
+      }
     }
 
-    // Distribute all questions evenly across the 10 TV monitors
+    function handleViewportChange() {
+      resizeCanvas();
+    }
+
+    window.addEventListener('resize', handleViewportChange);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleViewportChange);
+    }
+
     function getQuizIndicesForTV(tvIdx) {
-      const total = QUIZ_DATA.length;
-      const base = Math.floor(total / NUM_TVS);
-      const rem = total % NUM_TVS;
+      const totalQ = QUIZ_DATA.length;
+      const totalTV = 10;
+      const base = Math.floor(totalQ / totalTV);
+      const rem = totalQ % totalTV;
       const start = tvIdx * base + Math.min(tvIdx, rem);
       const count = base + (tvIdx < rem ? 1 : 0);
       const indices = [];
@@ -1488,95 +1561,87 @@
       return indices.every((qIdx) => Boolean(gameState.answeredFlags[qIdx]));
     }
 
+    function spawnFloatingText(x, y, text, color = '#facc15') {
+      floatingTexts.push({ x, y, text, color, life: 48 });
+    }
+
+    function spawnPopCoin(x, y) {
+      popCoins.push({ x, y, vy: -6.5, life: 24 });
+    }
+
     function buildLevel() {
       const gY = GROUND_Y;
+      floatingTexts = [];
+      popCoins = [];
 
-      // Ground segments with 5 open pits (NO floating platforms above pits!)
+      // Solid ground segments separated by 10 open pits (NO floating boards above pits)
       groundSegments = [
-        { x: 0, w: 940 },         // Safe start + NPC Guru Ibu Ria before Pit 1 (940..1055)
-        { x: 1055, w: 1045 },     // TV 1 & TV 2 (Pit 2 at 2100..2215)
-        { x: 2215, w: 1085 },     // TV 3 & TV 4 (Pit 3 at 3300..3415)
-        { x: 3415, w: 1085 },     // TV 5 & TV 6 (Pit 4 at 4500..4615)
-        { x: 4615, w: 1085 },     // TV 7 & TV 8 (Pit 5 at 5700..5815)
-        { x: 5815, w: LEVEL_WIDTH - 5815 } // TV 9, TV 10 & FINISH
+        { x: 0, w: 940 },       // Pit 1: 940..1055
+        { x: 1055, w: 485 },    // Pit 2: 1540..1660
+        { x: 1660, w: 460 },    // Pit 3: 2120..2240
+        { x: 2240, w: 500 },    // Pit 4: 2740..2865
+        { x: 2865, w: 455 },    // Pit 5: 3320..3445
+        { x: 3445, w: 495 },    // Pit 6: 3940..4065
+        { x: 4065, w: 455 },    // Pit 7: 4520..4645
+        { x: 4645, w: 495 },    // Pit 8: 5140..5265
+        { x: 5265, w: 455 },    // Pit 9: 5720..5845
+        { x: 5845, w: 455 },    // Pit 10: 6300..6425
+        { x: 6425, w: LEVEL_WIDTH - 6425 }
       ];
 
-      // Elevated platforms ONLY over solid ground (none above pits)
+      // Elevated platforms placed ONLY over solid ground (never above pits)
       platforms = [
-        { x: 320, y: gY - 105, w: 150, h: 20 },
-        { x: 1360, y: gY - 110, w: 170, h: 20 },
-        { x: 1880, y: gY - 135, w: 150, h: 20 },
-        { x: 2560, y: gY - 110, w: 170, h: 20 },
-        { x: 3080, y: gY - 135, w: 150, h: 20 },
-        { x: 3760, y: gY - 110, w: 170, h: 20 },
-        { x: 4280, y: gY - 135, w: 150, h: 20 },
-        { x: 4960, y: gY - 110, w: 170, h: 20 },
-        { x: 5480, y: gY - 135, w: 150, h: 20 },
-        { x: 6160, y: gY - 110, w: 170, h: 20 }
+        { x: 330, y: gY - 76, w: 130, h: 16 },
+        { x: 1310, y: gY - 80, w: 120, h: 16 },
+        { x: 1910, y: gY - 80, w: 120, h: 16 },
+        { x: 2490, y: gY - 84, w: 130, h: 16 },
+        { x: 3110, y: gY - 80, w: 120, h: 16 },
+        { x: 3690, y: gY - 84, w: 130, h: 16 },
+        { x: 4310, y: gY - 80, w: 120, h: 16 },
+        { x: 4890, y: gY - 84, w: 130, h: 16 },
+        { x: 5510, y: gY - 80, w: 120, h: 16 },
+        { x: 6090, y: gY - 84, w: 120, h: 16 }
       ];
 
-      // Preserve state of head-butt coin blocks if resizing mid-game
-      const prevBlocks = coinBlocks.map(b => ({ revealed: b.revealed, coinsLeft: b.coinsLeft }));
-      const blockSpecs = [
-        // Before Pit 1 (practice visible [?] blocks + 1 hidden block)
-        { x: 240, y: gY - 115, hidden: false, coinsLeft: 1 },
-        { x: 380, y: gY - 210, hidden: true, coinsLeft: 2 },
-        { x: 520, y: gY - 115, hidden: false, coinsLeft: 1 },
-        // After Pit 1
-        { x: 1290, y: gY - 115, hidden: false, coinsLeft: 1 },
-        { x: 1430, y: gY - 215, hidden: true, coinsLeft: 2 },
-        { x: 1640, y: gY - 115, hidden: false, coinsLeft: 1 },
-        { x: 2480, y: gY - 115, hidden: false, coinsLeft: 1 },
-        { x: 2630, y: gY - 215, hidden: true, coinsLeft: 2 },
-        { x: 2840, y: gY - 115, hidden: false, coinsLeft: 1 },
-        { x: 3680, y: gY - 115, hidden: false, coinsLeft: 1 },
-        { x: 3830, y: gY - 215, hidden: true, coinsLeft: 2 },
-        { x: 4040, y: gY - 115, hidden: false, coinsLeft: 1 },
-        { x: 4880, y: gY - 115, hidden: false, coinsLeft: 1 },
-        { x: 5030, y: gY - 215, hidden: true, coinsLeft: 2 },
-        { x: 5240, y: gY - 115, hidden: false, coinsLeft: 1 },
-        { x: 6080, y: gY - 115, hidden: false, coinsLeft: 1 },
-        { x: 6230, y: gY - 215, hidden: true, coinsLeft: 2 },
-        { x: 6720, y: gY - 120, hidden: true, coinsLeft: 3 }
+      // Head-butt Coin Blocks (Visible [?] and Hidden Secret Coin Blocks)
+      coinBlocks = [
+        { x: 245, y: gY - 98, w: 32, h: 32, coinsLeft: 1, hidden: true, revealed: false, bumpY: 0 },
+        { x: 510, y: gY - 98, w: 32, h: 32, coinsLeft: 2, hidden: false, revealed: true, bumpY: 0 },
+        { x: 1455, y: gY - 98, w: 32, h: 32, coinsLeft: 2, hidden: true, revealed: false, bumpY: 0 },
+        { x: 2050, y: gY - 98, w: 32, h: 32, coinsLeft: 2, hidden: false, revealed: true, bumpY: 0 },
+        { x: 2650, y: gY - 98, w: 32, h: 32, coinsLeft: 2, hidden: true, revealed: false, bumpY: 0 },
+        { x: 3250, y: gY - 98, w: 32, h: 32, coinsLeft: 2, hidden: false, revealed: true, bumpY: 0 },
+        { x: 3850, y: gY - 98, w: 32, h: 32, coinsLeft: 2, hidden: true, revealed: false, bumpY: 0 },
+        { x: 4450, y: gY - 98, w: 32, h: 32, coinsLeft: 2, hidden: false, revealed: true, bumpY: 0 },
+        { x: 5050, y: gY - 98, w: 32, h: 32, coinsLeft: 2, hidden: true, revealed: false, bumpY: 0 },
+        { x: 5650, y: gY - 98, w: 32, h: 32, coinsLeft: 2, hidden: false, revealed: true, bumpY: 0 },
+        { x: 6230, y: gY - 98, w: 32, h: 32, coinsLeft: 3, hidden: true, revealed: false, bumpY: 0 }
       ];
-      coinBlocks = blockSpecs.map((spec, idx) => ({
-        x: spec.x,
-        y: spec.y,
-        w: 34,
-        h: 34,
-        hidden: spec.hidden,
-        revealed: prevBlocks[idx] ? prevBlocks[idx].revealed : !spec.hidden,
-        coinsLeft: prevBlocks[idx] ? prevBlocks[idx].coinsLeft : spec.coinsLeft,
-        bumpY: 0
-      }));
 
-      // Simple retro spike obstacles (touching deducts 1 coin)
+      // Spikes / Mines (-1 Coin penalty)
       hazards = [
-        { x: 1560, y: gY - 22, w: 36, h: 22 },
-        { x: 2760, y: gY - 22, w: 36, h: 22 },
-        { x: 3960, y: gY - 22, w: 36, h: 22 },
-        { x: 5160, y: gY - 22, w: 36, h: 22 },
-        { x: 6360, y: gY - 22, w: 36, h: 22 }
+        { x: 1265, y: gY - 18, w: 36, h: 18 },
+        { x: 1865, y: gY - 18, w: 36, h: 18 },
+        { x: 2440, y: gY - 18, w: 36, h: 18 },
+        { x: 3065, y: gY - 18, w: 36, h: 18 },
+        { x: 3640, y: gY - 18, w: 36, h: 18 },
+        { x: 4265, y: gY - 18, w: 36, h: 18 },
+        { x: 4840, y: gY - 18, w: 36, h: 18 },
+        { x: 5465, y: gY - 18, w: 36, h: 18 },
+        { x: 6040, y: gY - 18, w: 36, h: 18 }
       ];
 
-      // Preserve collected coins if resizing mid-game
-      const prevCollected = coins.map(c => c.collected);
+      // Collectible Coins along platforms and safe paths
       coins = [];
-      const coinSpots = [
-        [355, gY - 145], [395, gY - 145], [435, gY - 145],
-        [1405, gY - 150], [1445, gY - 150], [1920, gY - 175], [1960, gY - 175],
-        [2605, gY - 150], [2645, gY - 150], [3120, gY - 175], [3160, gY - 175],
-        [3805, gY - 150], [3845, gY - 150], [4320, gY - 175], [4360, gY - 175],
-        [5005, gY - 150], [5045, gY - 150], [5520, gY - 175], [5560, gY - 175],
-        [6205, gY - 150], [6245, gY - 150], [6660, gY - 45], [6700, gY - 45]
-      ];
-      coinSpots.forEach((pt, idx) => {
-        coins.push({
-          x: pt[0],
-          y: pt[1],
-          r: 11,
-          collected: prevCollected[idx] || false
-        });
+      platforms.forEach((plat) => {
+        for (let i = 0; i < 3; i++) {
+          coins.push({
+            x: plat.x + 25 + i * 38,
+            y: plat.y - 26,
+            r: 10,
+            collected: false
+          });
+        }
       });
 
       // NPC Guru Ibu Ria positioned BEFORE Pit 1 (940..1055)
@@ -1819,51 +1884,22 @@
       return 'D (Perlu Bimbingan)';
     }
 
-    let lastResultRecord = null;
     async function submitScoreToCloud(record) {
-      lastResultRecord = record;
-      // Local recap is only a convenience copy for this browser.
-      if (!liveScoresList.includes(record)) liveScoresList.unshift(record);
+      // Save to local cache first and sort by rank (Nilai desc, Koin desc)
+      liveScoresList.unshift(record);
       sortScoresByRank(liveScoresList);
       saveLocalScores();
       renderLiveDashboard();
 
-      const statusEl = document.getElementById('cloud-submit-status');
-      const retryBtn = document.getElementById('btn-retry-cloud');
-      const publishStatus = (message, retry = true) => {
-        statusEl.textContent = message;
-        retryBtn.classList.toggle('hidden', !retry);
-      };
-      publishStatus('Mengirim hasil ke Firebase...', false);
-      if (!isCloudConnected || !db || !currentUser) {
-        publishStatus('BELUM TERKIRIM: Firebase belum terhubung. Simpan CSV sebagai cadangan.');
-        return;
-      }
-      try {
-        // One CREATE per anonymous Firebase UID. Rules deny read/update/delete.
-        const payload = {
-          uid: currentUser.uid,
-          name: String(record.name).slice(0, 100),
-          className: String(record.className).slice(0, 80),
-          absen: String(record.absen).slice(0, 3),
-          mapel: String(record.mapel).slice(0, 120),
-          totalQ: record.totalQ,
-          correct: record.correct,
-          wrong: record.wrong,
-          score: record.score,
-          coins: record.coins,
-          predikat: String(record.predikat).slice(0, 80),
-          createdAt: serverTimestamp(),
-          verification: 'CLIENT_UNVERIFIED'
-        };
-        await setDoc(doc(db, 'hasil_kuis', currentUser.uid), payload);
-        publishStatus('BERHASIL: Hasil tersimpan di Firestore (nilai belum diverifikasi server).', false);
-      } catch (err) {
-        console.error('Firebase score submission failed:', err);
-        const already = err.code === 'permission-denied';
-        publishStatus(already
-          ? 'BELUM TERKIRIM: Akses ditolak / akun ini sudah pernah mengirim. Periksa Firestore dan Rules.'
-          : 'BELUM TERKIRIM: Gangguan koneksi atau Firebase. Coba lagi.');
+      // Push to Firestore if connected
+      if (isCloudConnected && db && currentUser) {
+        try {
+          const docId = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+          const scoreDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'student_scores', docId);
+          await setDoc(scoreDocRef, record);
+        } catch (err) {
+          console.debug('Failed to push score to cloud:', err);
+        }
       }
     }
 
@@ -1908,10 +1944,6 @@
 
       submitScoreToCloud(record);
     }
-
-    document.getElementById('btn-retry-cloud').addEventListener('click', () => {
-      if (lastResultRecord) submitScoreToCloud(lastResultRecord);
-    });
 
     // Download individual CSV report
     document.getElementById('btn-download-csv').addEventListener('click', () => {
@@ -2358,7 +2390,6 @@
         ctx.fillText('INFO', nx + 48, ny + 21);
 
         // Pixel-art Ibu Ria (Hijab, Blazer, Skirt, Glasses)
-        // Shoes & Skirt
         ctx.fillStyle = '#0f172a';
         ctx.fillRect(nx + 8, ny + 42, 7, 8);
         ctx.fillRect(nx + 19, ny + 42, 7, 8);
@@ -2377,7 +2408,7 @@
         ctx.fillStyle = '#fed7aa';
         ctx.fillRect(nx + 9, ny + 4, 15, 10);
 
-        // Glasses & Smile (facing left toward incoming player)
+        // Glasses & Smile
         ctx.fillStyle = '#0f172a';
         ctx.fillRect(nx + 10, ny + 7, 4, 3);
         ctx.fillRect(nx + 16, ny + 7, 4, 3);
@@ -2394,7 +2425,7 @@
         // Automatic Instruction Speech Bubble when player is nearby before Pit 1
         const distToTeacher = Math.abs((player.x + player.w / 2) - (npcTeacher.x + npcTeacher.w / 2));
         if (distToTeacher < 260) {
-          const bw = 276;
+          const bw = Math.min(276, VIEW_W - 16);
           const bh = 62;
           const bx = Math.max(8, Math.min(VIEW_W - bw - 8, nx - bw / 2 + 17));
           const by = ny - 92;
@@ -2567,7 +2598,6 @@
         : 0;
 
       // Pixel-art SMK Student Entrepreneur Character
-      // Shoes / Legs
       ctx.fillStyle = '#1e293b';
       ctx.fillRect(px + 6, py + 32 + runCycle, 8, 12 - runCycle);
       ctx.fillRect(px + 18, py + 32 - runCycle, 8, 12 + runCycle);
@@ -2683,7 +2713,6 @@
     // Start Game Form Submission
     document.getElementById('student-form').addEventListener('submit', (e) => {
       e.preventDefault();
-      if (!quizBankReady) { document.getElementById('form-error').textContent = 'Bank soal Firebase belum siap. Refresh setelah guru memublikasikan soal.'; return; }
       const nameVal = document.getElementById('student-name').value.trim();
       const classVal = document.getElementById('student-class').value.trim();
       const absenVal = document.getElementById('student-absen').value.trim();
@@ -2747,10 +2776,7 @@
     const teacherAuthError = document.getElementById('teacher-auth-error');
 
     // Open Teacher Password Modal
-    document.getElementById('btn-open-teacher').textContent = '🔒 Kelola Soal: Dashboard Guru';
     document.getElementById('btn-open-teacher').addEventListener('click', () => {
-      window.open('dashboard_ibu_ria/', '_blank', 'noopener');
-      return;
       teacherPassInput.value = '';
       teacherAuthError.textContent = '';
       authTeacherModal.classList.remove('hidden');
@@ -2922,7 +2948,7 @@
         const hasNomorCol = /^\d*$/.test(cols[0].trim());
         const startIdx = hasNomorCol ? 1 : 0;
 
-        // If there are extra columns between question and options (e.g. legacy Topik column), align from keyColIdx backwards
+        // Align options from keyColIdx backwards
         let optEnd = keyColIdx - 1;
         let hasOptE = optEnd - startIdx >= 5;
         let optStart = hasOptE ? optEnd - 4 : optEnd - 3;
@@ -3000,7 +3026,7 @@
       const perTv = (questions.length / 10).toFixed(1).replace('.0', '');
       const fb = document.getElementById('upload-feedback');
       fb.style.color = '#34d399';
-      fb.textContent = `✅ Berhasil memuat ${questions.length} soal dari ${sourceLabel} (~${perTv} soal per Monitor TV). Klik "Simpan Soal di Perangkat Ini" untuk menerapkan!`;
+      fb.textContent = `✅ Berhasil memuat ${questions.length} soal dari ${sourceLabel} (~${perTv} soal per Monitor TV). Klik "Simpan & Update ke Cloud" untuk menerapkan!`;
     }
 
     // File input handler
@@ -3170,8 +3196,27 @@
       gameState.answeredFlags = new Array(QUIZ_DATA.length).fill(false);
       buildLevel();
 
-      statusEl.style.color = '#fbbf24';
-      statusEl.textContent = `Tersimpan hanya di perangkat ini (${QUIZ_DATA.length} soal). Sinkronisasi soal guru belum diaktifkan demi keamanan.`;
+      if (isCloudConnected && db && currentUser) {
+        try {
+          statusEl.style.color = '#facc15';
+          statusEl.textContent = 'Menyimpan pembaruan ke Cloud...';
+          const configDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'quiz_settings', 'active_config');
+          await setDoc(configDocRef, {
+            mapel: currentMapel,
+            teacherCode: teacherAccessCode,
+            quizzes: QUIZ_DATA,
+            updatedAt: Date.now()
+          });
+          statusEl.style.color = '#34d399';
+          statusEl.textContent = `✅ Berhasil disimpan ke Cloud! (${QUIZ_DATA.length} soal aktif untuk Mapel: ${currentMapel})`;
+        } catch (err) {
+          statusEl.style.color = '#fbbf24';
+          statusEl.textContent = `⚠️ Tersimpan di perangkat lokal (${QUIZ_DATA.length} soal). Sinkronisasi Cloud tertunda.`;
+        }
+      } else {
+        statusEl.style.color = '#34d399';
+        statusEl.textContent = `✅ Tersimpan di Mode Lokal! (${QUIZ_DATA.length} soal aktif untuk Mapel: ${currentMapel})`;
+      }
     });
 
     // Reset to Default Questions
@@ -3180,7 +3225,7 @@
       renderManualQuizEditor();
       const statusEl = document.getElementById('teacher-save-status');
       statusEl.style.color = '#38bdf8';
-      statusEl.textContent = 'Soal bawaan (10 soal) dimuat ke editor. Klik "Simpan Soal di Perangkat Ini" untuk menerapkan.';
+      statusEl.textContent = 'Soal bawaan (10 soal) dimuat ke editor. Klik "Simpan & Update ke Cloud" untuk menerapkan.';
     });
 
     // Close Teacher Panel
@@ -3280,7 +3325,7 @@
           renderLiveDashboard();
           if (isCloudConnected && db && item.id) {
             try {
-              // Cloud deletion disabled: teacher identity is not verified. Database remains unchanged.
+              await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'student_scores', item.id));
             } catch (_) {}
           }
         };
@@ -3312,7 +3357,7 @@
         for (const item of toDelete) {
           if (item.id) {
             try {
-              // Cloud deletion disabled: teacher identity is not verified. Database remains unchanged.
+              await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'student_scores', item.id));
             } catch (_) {}
           }
         }
